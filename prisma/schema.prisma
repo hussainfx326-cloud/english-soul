@@ -1,0 +1,244 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==============================
+// 1. NextAuth Core Models
+// ==============================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+
+  // App-specific relations
+  profile          UserProfile?
+  progress         LearningProgress[]
+  achievements     UserAchievement[]
+  subscriptions    Subscription?
+  leaderboardScore LeaderboardScore?
+  streaks          DailyStreak?
+  xpProgress       XPProgress?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==============================
+// 2. English Soul Core Models
+// ==============================
+
+model UserProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nativeLanguage  String   @default("es")
+  targetLevel     String   @default("C1")
+  currentLevel    String   @default("B1")
+  bio             String?
+}
+
+model Lesson {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  level           Level    
+  moduleType      ModuleType 
+  content         Json?    
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  progressRecords   LearningProgress[]
+  vocabularyItems   Vocabulary[]
+  grammarExercises  GrammarExercise[]
+}
+
+enum Level {
+  B1
+  B2
+  C1
+  C2
+  C3
+}
+
+enum ModuleType {
+  READING
+  WRITING
+  LISTENING
+  SPEAKING
+  GRAMMAR
+}
+
+model LearningProgress {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId        String
+  lesson          Lesson   @relation(fields: [lessonId], references: [id])
+  status          ProgressStatus @default(IN_PROGRESS)
+  score           Int?
+  completedAt     DateTime?
+  lastAccessedAt  DateTime @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Vocabulary {
+  id              String   @id @default(cuid())
+  word            String
+  translation     String
+  context         String?
+  level           Level
+  lessonId        String?
+  lesson          Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+}
+
+model GrammarExercise {
+  id              String   @id @default(cuid())
+  title           String
+  prompt          String
+  correctAnswer   String
+  options         String[] 
+  explanation     String?
+  lessonId        String?
+  lesson          Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+}
+
+// ==============================
+// 3. Gamification System
+// ==============================
+
+model XPProgress {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalXP         Int      @default(0)
+  level           Int      @default(1)
+  lastUpdated     DateTime @default(now())
+}
+
+model DailyStreak {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStreak   Int      @default(0)
+  longestStreak   Int      @default(0)
+  lastActiveDate  DateTime @default(now())
+}
+
+model Achievement {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  description     String
+  iconUrl         String?
+  xpReward        Int      @default(50)
+  
+  users           UserAchievement[]
+}
+
+model UserAchievement {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievementId   String
+  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  unlockedAt      DateTime @default(now())
+
+  @@unique([userId, achievementId])
+}
+
+model LeaderboardScore {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyXP        Int      @default(0)
+  league          League   @default(BRONZE)
+  updatedAt       DateTime @updatedAt
+}
+
+enum League {
+  BRONZE
+  SILVER
+  GOLD
+  SAPPHIRE
+  DIAMOND
+}
+
+// ==============================
+// 4. Subscriptions
+// ==============================
+
+model Subscription {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            PlanType @default(FREE)
+  stripePriceId   String?
+  stripeSubId     String?
+  stripeCustId    String?
+  status          String   @default("active")
+  currentPeriodEnd DateTime?
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
