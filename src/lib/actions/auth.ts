@@ -19,15 +19,23 @@ export async function loginWithCreds(prevState: any, formData: FormData) {
     
     return { success: true };
   } catch (error) {
+    if (error && typeof error === 'object' && 'digest' in error) {
+      if (typeof (error as any).digest === 'string' && (error as any).digest.includes('NEXT_REDIRECT')) {
+        throw error;
+      }
+    }
+
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
           return { error: "Invalid email or password." };
         default:
-          return { error: "Something went wrong." };
+          return { error: "Something went wrong with Authentication." };
       }
     }
-    throw error;
+    
+    // Return the actual runtime error as a string for debugging
+    return { error: `Server Exception: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
@@ -104,7 +112,7 @@ export async function signUpUser(prevState: any, formData: FormData) {
        }
      }
      
-     // Also throw generic errors that we don't know how to handle, allowing Next.js to catch redirects
-     throw error;
+     // Return the actual runtime error as a string for debugging
+     return { error: `Server Exception: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
