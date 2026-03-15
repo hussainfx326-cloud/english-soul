@@ -1,38 +1,65 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import prisma from '@/lib/prisma';
+import { auth } from "@/auth";
 
 export async function POST(req: Request) {
   try {
-    // Initialize the OpenAI client locally per-request
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
     });
 
-    const { messages, userLevel } = await req.json();
+    const { conversationId, userLevel, message } = await req.json();
 
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Invalid message format' }, { status: 400 });
+    if (!conversationId || !message) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Save User Message to DB
+    const userMsg = await prisma.chatMessage.create({
+        data: {
+            conversationId,
+            role: "user",
+            content: message
+        }
+    });
+
+    // Fetch up to last 10 messages for context
+    const recentMessages = await prisma.chatMessage.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+    });
+    
+    // Reverse to chronological
+    const contextMessages = recentMessages.reverse().map(m => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: m.content
+    }));
 
     const systemPrompt = `You are an expert English native tutor for a highly professional platform called English Soul.
 Your student is currently at CEFR level ${userLevel || 'B1'}.
 1. If the student makes a grammar or vocabulary mistake, you MUST provide a friendly correction.
 2. Respond naturally to their questions or conversation.
-3. ALWAYS return your response in the following strict JSON format, without markdown wrapping:
+3. Keep responses relatively concise but highly informative.
+4. ALWAYS return your response in the following strict JSON format:
 {
-  "response": "Your friendly text response to the user's message.",
+  "response": "Your friendly text response.",
   "correction": {
-    "original": "The exact sentence they wrote incorrectly (if any). If no mistake, leave null.",
-    "fixed": "The grammatically correct version of that sentence (if any). If no mistake, leave null.",
-    "explanation": "A short, easy-to-understand explanation of the grammar rule." // Leave null if no mistake
+    "original": "The exact incorrect sentence (leave null if perfect).",
+    "fixed": "The grammatically correct version (leave null if perfect).",
+    "explanation": "A short explanation of why it was wrong (leave null if perfect)."
   }
 }`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o', // or gpt-3.5-turbo
+      model: 'gpt-4o-mini', // Fast and cheap for this usecase
       messages: [
         { role: 'system', content: systemPrompt },
-        ...messages
+        ...contextMessages
       ],
       response_format: { type: "json_object" },
       temperature: 0.7,
@@ -47,7 +74,23 @@ Your student is currently at CEFR level ${userLevel || 'B1'}.
       throw new Error("Failed to parse OpenAI JSON response");
     }
 
-    return NextResponse.json(parsedResponse);
+    // Save AI Response to DB
+    const assistantMsg = await prisma.chatMessage.create({
+        data: {
+            conversationId,
+            role: "assistant",
+            content: parsedResponse.response,
+            hasCorrection: !!parsedResponse.correction?.original,
+            correctionData: parsedResponse.correction?.original ? parsedResponse.correction : null
+        }
+    });
+
+    return NextResponse.json({
+        id: assistantMsg.id,
+        role: "assistant",
+        content: parsedResponse.response,
+        correction: parsedResponse.correction?.original ? parsedResponse.correction : undefined
+    });
   } catch (error) {
     console.error('OpenAI API Error:', error);
     return NextResponse.json({ error: 'Failed to process AI response' }, { status: 500 });
