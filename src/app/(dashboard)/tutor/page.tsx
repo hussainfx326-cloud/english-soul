@@ -14,20 +14,25 @@ export default async function TutorPage() {
     });
 
     if (!conversation) {
-        conversation = await prisma.tutorConversation.create({
+        await prisma.tutorConversation.create({
             data: {
                 userId: session.user.id,
-                level: "B1",
                 messages: {
                     create: {
                         role: "assistant",
                         content: "Hello! I am your AI native tutor. Are there any grammar rules or sentences you want me to check today?",
                     }
                 }
-            },
-            include: { messages: true }
+            }
+        });
+        
+        conversation = await prisma.tutorConversation.findFirst({
+            where: { userId: session.user.id },
+            include: { messages: { orderBy: { createdAt: 'asc' } } }
         });
     }
+    
+    if (!conversation) return null;
 
     const userProfile = await prisma.userProfile.findUnique({
         where: { userId: session.user.id }

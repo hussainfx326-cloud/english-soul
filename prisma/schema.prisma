@@ -167,6 +167,8 @@ model ChatMessage {
   conversation    TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role            String   // "user" | "assistant" | "system"
   content         String   @db.Text
+  hasCorrection   Boolean  @default(false)
+  correctionData  Json?
   createdAt       DateTime @default(now())
 }
 

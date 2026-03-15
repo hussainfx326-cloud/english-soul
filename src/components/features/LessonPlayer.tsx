@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle, ArrowRight, Flag, BookOpen, Volume2, Mic } from "lucide-react";
+import { addXpToUser } from "@/app/actions/gamification";
 
 export default function LessonPlayer({ lesson }: { lesson: any }) {
     const router = useRouter();
@@ -37,10 +38,6 @@ export default function LessonPlayer({ lesson }: { lesson: any }) {
 
     const currentExercise = exercises[currentIndex];
     
-import { addXpToUser } from "@/app/actions/gamification";
-
-// ... further down inside the component ...
-
     // Award XP on complete summary screen
     if (currentIndex >= exercises.length) {
         if (!xpAwarded) {
