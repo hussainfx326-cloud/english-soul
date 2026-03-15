@@ -5,7 +5,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // ==============================
@@ -34,6 +33,7 @@ model User {
   leaderboardScore LeaderboardScore?
   streaks          DailyStreak?
   xpProgress       XPProgress?
+  tutorConversations TutorConversation[]
 }
 
 enum Role {
@@ -87,22 +87,87 @@ model UserProfile {
   nativeLanguage  String   @default("es")
   targetLevel     String   @default("C1")
   currentLevel    String   @default("B1")
+  learningGoal    String   @default("General Fluency")
+  dailyGoal       Int      @default(15) // minutes
   bio             String?
+}
+
+model Course {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  level           Level    @unique
+  units           Unit[]
+}
+
+model Unit {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  order           Int      @default(1)
+  courseId        String
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons         Lesson[]
 }
 
 model Lesson {
   id              String   @id @default(cuid())
   title           String
   description     String?
-  level           Level    
-  moduleType      ModuleType 
+  order           Int      @default(1)
+  unitId          String?
+  unit            Unit?    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  
+  // Backwards compatibility with MVP
+  level           Level?    
+  moduleType      ModuleType? 
   content         Json?    
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
   progressRecords   LearningProgress[]
   vocabularyItems   Vocabulary[]
   grammarExercises  GrammarExercise[]
+  exercises         Exercise[]
+}
+
+model Exercise {
+  id              String   @id @default(cuid())
+  title           String
+  type            ExerciseType
+  content         Json     
+  order           Int      @default(1)
+  lessonId        String
+  lesson          Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+}
+
+enum ExerciseType {
+  READING
+  LISTENING
+  GRAMMAR
+  QUIZ
+  WRITING
+  SPEAKING
+}
+
+model TutorConversation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String   @default("New Chat")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  messages        ChatMessage[]
+}
+
+model ChatMessage {
+  id              String   @id @default(cuid())
+  conversationId  String
+  conversation    TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role            String   // "user" | "assistant" | "system"
+  content         String   @db.Text
+  createdAt       DateTime @default(now())
 }
 
 enum Level {

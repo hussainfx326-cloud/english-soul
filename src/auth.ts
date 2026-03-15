@@ -64,5 +64,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session
     }
+  },
+  events: {
+    async createUser({ user }) {
+      if (user.id) {
+        // Create default structured data for OAuth users (like Google)
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              profile: {
+                create: {
+                  nativeLanguage: 'es',
+                  targetLevel: 'C1',
+                  currentLevel: 'B1',
+                  learningGoal: 'General Fluency',
+                  dailyGoal: 15
+                }
+              },
+              xpProgress: {
+                create: { totalXP: 0, level: 1 }
+              },
+              streaks: {
+                create: { currentStreak: 0, longestStreak: 0 }
+              },
+              leaderboardScore: {
+                create: { weeklyXP: 0, league: 'BRONZE' }
+              }
+            }
+          })
+        } catch (error) {
+          console.error("Error creating default records for new OAuth user:", error)
+        }
+      }
+    }
   }
 })
