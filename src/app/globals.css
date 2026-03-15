@@ -1,39 +1,54 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-900: #1e3a8a;
+  --color-primary-50: #f0f4f8;
+  --color-primary-100: #d9e2ec;
+  --color-primary-200: #bcccdc;
+  --color-primary-300: #9fb3c8;
+  --color-primary-400: #829ab1;
+  --color-primary-500: #627d98;
+  --color-primary-600: #486581;
+  --color-primary-700: #334e68;
+  --color-primary-800: #243b53;
+  --color-primary-900: #0A2540; /* Deep Blue base */
 
-  --color-accent-500: #8b5cf6;
-  --color-accent-600: #7c3aed;
+  --color-accent-50: #fff9e6;
+  --color-accent-100: #fff0b3;
+  --color-accent-200: #ffe680;
+  --color-accent-300: #ffdb4d;
+  --color-accent-400: #ffd11a;
+  --color-accent-500: #FFC107; /* Gold base */
+  --color-accent-600: #e6ad06;
+  --color-accent-700: #b38605;
+  --color-accent-800: #806003;
+  --color-accent-900: #4d3a02;
   
   --color-success-500: #10b981;
-  --color-secondary-500: #f59e0b;
+  --color-secondary-500: #FFC107;
   --color-danger-500: #ef4444;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
   /* English Soul brand gradients */
-  --background-glass: rgba(255, 255, 255, 0.1);
-  --border-glass: rgba(255, 255, 255, 0.2);
+  --background-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(10, 37, 64, 0.1);
 
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-outfit);
+  --font-sans: var(--font-open-sans);
+  --font-display: var(--font-montserrat);
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #F8F9FA; /* Light Gray */
+  --foreground: #0A2540; /* Deep Blue text */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
-    --foreground: #f8fafc;
+    --background: #0A2540; /* Deep Blue */
+    --foreground: #F8F9FA; /* Light Gray text */
+    --background-glass: rgba(10, 37, 64, 0.7);
+    --border-glass: rgba(248, 249, 250, 0.1);
   }
 }
 
@@ -47,7 +62,7 @@ body {
 /* Glassmorphism Utilities */
 .glass {
   background: var(--background-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-glass);
 }

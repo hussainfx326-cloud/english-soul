@@ -59,7 +59,7 @@ export default function LandingPage() {
            {[
              { title: "Smart AI Tutor", icon: <BrainCircuit className="w-6 h-6 text-color-primary-500" />, desc: "Chat with a GPT-4o powered tutor that corrects your grammar in real-time." },
              { title: "Speaking Simulator", icon: <Mic className="w-6 h-6 text-color-accent-500" />, desc: "Gain confidence by practicing real-world voice scenarios with Whisper API." },
-             { title: "Gamified Progress", icon: <Trophy className="w-6 h-6 text-color-warning-500" />, desc: "Earn XP, streak badges, and climb competitive learning leagues." },
+             { title: "Gamified Progress", icon: <Trophy className="w-6 h-6 text-color-secondary-500" />, desc: "Earn XP, streak badges, and climb competitive learning leagues." },
            ].map((feat, i) => (
              <div key={i} className="p-6 rounded-3xl bg-background/50 border border-border-glass backdrop-blur-sm shadow-sm hover:shadow-md transition-all">
                 <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center mb-4">
