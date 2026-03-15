@@ -7,7 +7,16 @@ import { AuthError } from "next-auth";
 
 export async function loginWithCreds(prevState: any, formData: FormData) {
   try {
-    await signIn("credentials", formData);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    
+    await signIn("credentials", {
+      email,
+      password,
+      redirect: true,
+      redirectTo: "/home",
+    });
+    
     return { success: true };
   } catch (error) {
     if (error instanceof AuthError) {
@@ -74,7 +83,13 @@ export async function signUpUser(prevState: any, formData: FormData) {
     });
 
     // Automatically sign in the user after creating
-    await signIn("credentials", formData);
+    await signIn("credentials", {
+      email,
+      password,
+      redirect: true,
+      redirectTo: "/home"
+    });
+    
     return { success: true };
     
   } catch (error) {
@@ -82,7 +97,14 @@ export async function signUpUser(prevState: any, formData: FormData) {
        return { error: "Could not sign in automatically." };
      }
      
-     console.error("Signup error:", error);
-     return { error: "Something went wrong creating the account." };
+     // Re-throw redirect errors so Next.js can navigate to /home
+     if (error && typeof error === 'object' && 'digest' in error) {
+       if (typeof (error as any).digest === 'string' && (error as any).digest.includes('NEXT_REDIRECT')) {
+         throw error;
+       }
+     }
+     
+     // Also throw generic errors that we don't know how to handle, allowing Next.js to catch redirects
+     throw error;
   }
 }
