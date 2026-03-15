@@ -139,7 +139,33 @@ async function main() {
     }
   })
 
-  console.log(`Seeding finished. Added B1 and B2 base curriculum.`)
+  // 6. Create Mock Users for Gamification Leaderboard
+  const mockUsers = [
+    { name: 'Maria Garcia', email: 'maria@example.com', xp: 4500 },
+    { name: 'David Chen', email: 'david@example.com', xp: 4120 },
+    { name: 'Sarah Smith', email: 'sarah@example.com', xp: 3500 },
+    { name: 'Yuki Tanaka', email: 'yuki@example.com', xp: 3420 },
+    { name: 'Ahmed Hassan', email: 'ahmed@example.com', xp: 3100 },
+  ];
+
+  for (const mock of mockUsers) {
+    await prisma.user.upsert({
+      where: { email: mock.email },
+      update: {},
+      create: {
+        name: mock.name,
+        email: mock.email,
+        xpProgress: {
+          create: { totalXP: mock.xp, level: Math.floor(mock.xp / 100) }
+        },
+        streaks: {
+          create: { currentStreak: 5, longestStreak: 12 }
+        }
+      }
+    });
+  }
+
+  console.log(`Seeding finished. Added B1/B2 base curriculum and Mock Leaderboard Users.`)
 }
 
 main()

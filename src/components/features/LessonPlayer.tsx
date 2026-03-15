@@ -11,9 +11,11 @@ export default function LessonPlayer({ lesson }: { lesson: any }) {
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
     const [showExplanation, setShowExplanation] = useState(false);
     
-    // Fill in the blank states
     const [blankValues, setBlankValues] = useState<Record<number, string>>({});
     
+    // Gamification state
+    const [xpAwarded, setXpAwarded] = useState(false);
+
     const exercises = lesson.exercises;
     const progressPercent = ((currentIndex) / exercises.length) * 100;
 
@@ -35,8 +37,17 @@ export default function LessonPlayer({ lesson }: { lesson: any }) {
 
     const currentExercise = exercises[currentIndex];
     
-    // For summary screen
+import { addXpToUser } from "@/app/actions/gamification";
+
+// ... further down inside the component ...
+
+    // Award XP on complete summary screen
     if (currentIndex >= exercises.length) {
+        if (!xpAwarded) {
+             setXpAwarded(true);
+             addXpToUser(15).catch(err => console.error("Failed to add XP", err));
+        }
+
         return (
             <div className="flex flex-col items-center justify-center p-12 text-center h-[60vh] animate-in fade-in zoom-in duration-500">
                 <div className="w-24 h-24 bg-color-success-500 rounded-full flex items-center justify-center text-white mb-6 shadow-xl shadow-color-success-500/30">

@@ -1,19 +1,22 @@
 "use client";
 
-import { Trophy, Shield, Medal, Star, ShieldAlert, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Trophy, Shield, Medal, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 
-export default function Leaderboard() {
+interface Ranking {
+    id: string;
+    rank: number;
+    name: string;
+    xp: number;
+    avatar: string;
+    isMe: boolean;
+    trend: string;
+}
+
+export default function Leaderboard({ initialRankings }: { initialRankings: Ranking[] }) {
   const currentLeague = "Gold League";
   
-  const rankings = [
-    { rank: 1, name: "Maria Garcia", xp: 4500, avatar: "M", isMe: false, trend: "up" },
-    { rank: 2, name: "David Chen", xp: 4120, avatar: "D", isMe: false, trend: "same" },
-    { rank: 3, name: "Alex (You)", xp: 3850, avatar: "A", isMe: true, trend: "up" },
-    { rank: 4, name: "Sarah Smith", xp: 3500, avatar: "S", isMe: false, trend: "down" },
-    { rank: 5, name: "Yuki Tanaka", xp: 3420, avatar: "Y", isMe: false, trend: "up" },
-    { rank: 6, name: "Ahmed Hassan", xp: 3100, avatar: "AH", isMe: false, trend: "same" },
-    { rank: 7, name: "Elena R.", xp: 2900, avatar: "E", isMe: false, trend: "down" },
-  ];
+  // If no DB data, fallback to rendering at least the header gracefully
+  const rankings = initialRankings.length > 0 ? initialRankings : [];
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -52,7 +55,7 @@ export default function Leaderboard() {
       {/* Rankings List */}
       <div className="glass rounded-3xl overflow-hidden border border-border-glass">
          <div className="p-4 border-b border-border-glass flex items-center justify-between bg-foreground/5">
-            <h3 className="font-bold text-foreground">Weekly Rankings</h3>
+            <h3 className="font-bold text-foreground">Global Rankings (XP)</h3>
             <span className="text-sm font-medium text-foreground/60 flex items-center gap-1">
               <Trophy className="w-4 h-4 text-color-secondary-500" /> Season 4
             </span>
@@ -67,14 +70,12 @@ export default function Leaderboard() {
                else if (user.rank === 3) rankIcon = <Medal className="w-6 h-6 text-amber-700 fill-current drop-shadow-md" />;
                else rankIcon = <span className="font-bold text-foreground text-lg w-6 text-center">{user.rank}</span>;
 
-               const isPromotionZone = user.rank <= 5;
-               
                return (
                  <div 
-                   key={user.name}
-                   className={`p-4 flex items-center gap-4 transition-colors ${
+                   key={user.id}
+                   className={`p-4 flex items-center gap-4 transition-colors relative ${
                      user.isMe 
-                     ? "bg-color-primary-50/50 dark:bg-color-primary-900/10 border-l-4 border-color-primary-500 relative" 
+                     ? "bg-color-primary-50/50 dark:bg-color-primary-900/10 border-l-4 border-color-primary-500" 
                      : "hover:bg-foreground/5"
                    }`}
                  >
@@ -82,7 +83,7 @@ export default function Leaderboard() {
                     {user.rank === 5 && (
                        <div className="absolute -bottom-px left-0 w-full border-b-[2px] border-dashed border-color-success-500/50 z-10"></div>
                     )}
-                    {user.rank === rankings.length - 2 && (
+                    {user.rank === Math.max(rankings.length - 2, 6) && (
                        <div className="absolute -bottom-px left-0 w-full border-b-[2px] border-dashed border-color-danger-500/50 z-10"></div>
                     )}
 
@@ -97,8 +98,8 @@ export default function Leaderboard() {
                     </div>
 
                     <div className="flex-1 font-medium">
-                       <span className={`block text-lg ${user.isMe ? "text-color-primary-700 dark:text-color-primary-400 font-bold" : "text-foreground"}`}>
-                         {user.name}
+                       <span className={`block text-lg ${user.isMe ? "text-color-primary-700 dark:text-color-primary-600 font-bold" : "text-foreground"}`}>
+                         {user.name} {user.isMe && "(You)"}
                        </span>
                     </div>
 
@@ -119,6 +120,12 @@ export default function Leaderboard() {
                  </div>
                );
             })}
+
+            {rankings.length === 0 && (
+                <div className="p-12 text-center text-foreground/50">
+                    No learning data found yet. Complete a lesson to appear on the leaderboard!
+                </div>
+            )}
          </div>
       </div>
 
