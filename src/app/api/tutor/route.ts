@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Initialize the OpenAI client (Requires OPENAI_API_KEY in .env)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
+    // Initialize the OpenAI client locally per-request
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
+    });
+
     const { messages, userLevel } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
