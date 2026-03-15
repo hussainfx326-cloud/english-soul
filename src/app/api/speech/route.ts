@@ -1,26 +1,30 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { auth } from "@/auth";
 
 export async function POST(req: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY || 'dummy_key',
     });
 
     const formData = await req.formData();
-    const audioFile = formData.get('file') as Blob;
+    const audioBlob = formData.get('file') as Blob;
     
-    if (!audioFile) {
+    if (!audioBlob) {
       return NextResponse.json({ error: 'No audio file provided' }, { status: 400 });
     }
 
-    // OpenAI Whisper expects a File object
-    const file = new File([audioFile], "audio.webm", { type: audioFile.type });
+    // Convert Blob to File required by openai SDK
+    const file = new File([audioBlob], "audio.webm", { type: audioBlob.type || 'audio/webm' });
 
     const transcription = await openai.audio.transcriptions.create({
       file,
       model: "whisper-1",
-      language: "en" // Since we evaluating English speech
+      language: "en"
     });
 
     return NextResponse.json({ text: transcription.text });
